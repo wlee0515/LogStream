@@ -52,7 +52,11 @@ def Flask_Thread(iPort):
 
 def Logger_Thread(iPort, iDirectory, iRecursive,iExtension):
 
-    out = subprocess.Popen(["start", "chrome", "-incognito", "http://localhost:{}/".format(iPort)], 
+    wWebAppAddress = "http://localhost:{}/".format(iPort)
+
+    print("Web App hosting at : {}".format(wWebAppAddress))
+    
+    out = subprocess.Popen(["start", "chrome", "-incognito", wWebAppAddress], 
            stdout=subprocess.DEVNULL, 
            stderr=subprocess.DEVNULL,
            shell=True)
@@ -92,7 +96,7 @@ def Logger_Thread(iPort, iDirectory, iRecursive,iExtension):
                     if wLineCount >= 1:
                         wFileHandle["CurrentLine"] = wLineCount - 1
                     wMonitoredFileList[wFullName] = wFileHandle
-                    print("Adding file {}".format(wFileHandle))
+                    print("Adding file : {}".format(wFullName))
 
         if False == iRecursive:
             break
@@ -111,7 +115,7 @@ def Logger_Thread(iPort, iDirectory, iRecursive,iExtension):
                         wFileHandle["FullPath"] = wFullName
                         wFileHandle["CurrentLine"] = 0
                         wMonitoredFileList[wFullName] = wFileHandle
-                        print("Adding file {}".format(wFileHandle))
+                        print("Adding file : {}".format(wFullName))
 
             if False == iRecursive:
                 break
@@ -140,7 +144,7 @@ def Logger_Thread(iPort, iDirectory, iRecursive,iExtension):
 
 
         for wKey in wDeletedFiles:
-            print("Log File deleted {}".format(wValue["Name"]))
+            print("Log File deleted : {}".format(wMonitoredFileList[wKey]["FullPath"]))
             del wMonitoredFileList[wKey]
 
         time.sleep(1)
