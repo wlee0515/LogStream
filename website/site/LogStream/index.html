@@ -1,0 +1,327 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>LogStream</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font: 13px Helvetica, Arial;
+    }
+
+    #id_formbody {
+      background: #000;
+      padding: 3px;
+      position: fixed;
+      top: 0;
+      width: 100%;
+      z-index: 100;
+      color: white;
+    }
+
+    #id_outText {
+      list-style-type: none;
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      position: relative;
+      top: 50px;
+    }
+
+    #id_outText li {
+      padding: 5px 10px;
+    }
+
+    #id_outText li:nth-child(odd) {
+      background: #eee;
+    }
+
+    #id_outText {
+      width: 100%;
+    }
+
+    .class_close {
+      cursor: pointer;
+      width : 20px;
+      height : 20px;
+      margin: 0px 0px 0px 10px;
+      padding: 5px 10px 5px 5px;
+    }
+    .class_close:hover {
+      background: red;
+    }
+
+    .class_filterlist li {
+      cursor: pointer;
+      margin: 5px 10px;
+      padding: 5px 0px 5px 5px;
+      display:inline-block;
+    }
+    .class_filterlist li:hover {
+      color: black;
+      background: white;
+    }
+  </style>
+  <script src="/script/LogStream/socket.io-1.2.0.js"></script>
+  <script>
+
+    var gGlobal = {
+      socket: null,
+      id_FilterText: "id_FilterText",
+      id_FilterList_In: "id_FilterList_In",
+      id_FilterList_Out: "id_FilterList_Out",
+      id_ScrollLock: "id_ScrollLock",
+      id_OutText: "id_outText",
+      id_FormBody: "id_formbody",
+      UpdateDisplay: false,
+      UpdateFilter: false,
+      MessageList: [],
+      FilterList_In: [],
+      FilterList_Out: [],
+    }
+
+    function init() {
+      gGlobal.socket = io();
+      gGlobal.socket.on('Send Log', processSendLog);
+
+      renderLogs();
+    }
+
+    function processSendLog(iLog) {
+      gGlobal.MessageList.push(iLog);
+      gGlobal.UpdateDisplay = true;
+    }
+
+    function renderLogs() {
+
+      if (true == gGlobal.UpdateFilter) {
+
+        var wInFilter = document.getElementById(gGlobal.id_FilterList_In);
+        if (null != wInFilter) {
+          populateFilter(wInFilter, gGlobal.FilterList_In, true);
+        }
+
+        var wOutFilter = document.getElementById(gGlobal.id_FilterList_Out);
+        if (null != wOutFilter) {
+          populateFilter(wOutFilter, gGlobal.FilterList_Out, false);
+        }
+        
+        var wOutText = document.getElementById(gGlobal.id_OutText);
+        var wForm = document.getElementById(gGlobal.id_FormBody);
+        
+        if ((null != wOutText) && (null != wForm)) {
+          wOutText.style.position = "relative"
+          wOutText.style.top = wForm.clientHeight + "px";
+        }
+
+        gGlobal.UpdateFilter = false;
+
+      }
+      if (true == gGlobal.UpdateDisplay) {
+
+        var wOutText = document.getElementById(gGlobal.id_OutText);
+
+        if (null != wOutText) {
+          wOutText.innerHTML = "";
+
+          for (var wi = 0; wi < gGlobal.MessageList.length; ++wi) {
+            wLog = gGlobal.MessageList[wi];
+            if (false == checkFiltered(wLog)) {
+              var wNewMessage = document.createElement("li");
+              wNewMessage.innerText = wLog.FileName + "(" + wLog.Line + ") : " + wLog.Log;
+
+              var hash = hashCode(wLog.FullPath);
+              var r = (hash & 0xFF0000) >> 16;
+              var g = (hash & 0x00FF00) >> 8;
+              var b = hash & 0x0000FF;
+              wNewMessage.style.color = "rgb(" + r + "," + g + "," + b + ")";
+              wOutText.append(wNewMessage)
+            }
+          }
+          gGlobal.UpdateDisplay = false
+          id_ScrollLock
+
+          var wScrollLock = document.getElementById(gGlobal.id_ScrollLock);
+          if (true == wScrollLock.checked) {
+            window.scrollTo(0, document.body.scrollHeight);
+          }
+        }
+      }
+      window.requestAnimationFrame(renderLogs)
+    }
+
+    function hashCode(str) { // java String#hashCode
+      var hash = 0;
+      for (var i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      return hash;
+    }
+
+    function populateFilter(iFilterListDOM, iFilterList, iIsInFilter) {
+
+      if (null != iFilterListDOM) {
+        iFilterListDOM.innerHTML = "";
+
+        for (var wi = 0; wi < iFilterList.length; ++wi) {
+          var wFilterValue = iFilterList[wi]
+          var wNewFilter = document.createElement("li");
+          wNewFilter.innerHTML = wFilterValue + "<span  class='class_close' onclick='removeFilter(\"" + wFilterValue + "\"," + iIsInFilter + ")'>x</span>";
+
+          var hash = hashCode(wFilterValue);
+          var r = (hash & 0xFF0000) >> 16;
+          var g = (hash & 0x00FF00) >> 8;
+          var b = hash & 0x0000FF;
+
+          iFilterListDOM.append(wNewFilter)
+        }
+      }
+    }
+
+    function checkFiltered(iLog) {
+      if (false == checkFilteredInOut(iLog, true)) {
+        if (true == checkFilteredInOut(iLog, false)) {
+          return false;
+        }
+      }
+      return true
+    }
+
+    function checkFilteredInOut(iLog, iIsInFilter) {
+      
+      var wFilterList = gGlobal.FilterList_Out;
+      if (true == iIsInFilter) {
+        wFilterList = gGlobal.FilterList_In;
+      }
+
+      if (0 == wFilterList.length) {
+        if (iIsInFilter) {
+          return false;
+        }
+        else {
+          return true;
+        }
+      }
+
+      for (var wi = 0; wi < wFilterList.length; ++wi) {
+        if (0 <= iLog.FullPath.indexOf(wFilterList[wi])) {
+          return false;
+        }
+
+        if (0 <= iLog.FileName.indexOf(wFilterList[wi])) {
+          return false;
+        }
+
+        if (0 <= iLog.Log.indexOf(wFilterList[wi])) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    function addFilter(iIsInFilter) {
+
+      var wFilterText = document.getElementById(gGlobal.id_FilterText);
+
+      if (null != wFilterText) {
+
+        if (wFilterText.value == "") {
+          return
+        }
+        if (true == iIsInFilter) {
+          gGlobal.FilterList_In.push(wFilterText.value)
+        }
+        else {
+          gGlobal.FilterList_Out.push(wFilterText.value)
+        }
+        wFilterText.value = "";
+        gGlobal.UpdateDisplay = true;
+        gGlobal.UpdateFilter = true;
+      }
+    }
+
+    function removeFilter(iFilterValue, iIsInFilter) {
+
+      if (iFilterValue == "") {
+        return;
+      }
+      var wFilterList = gGlobal.FilterList_Out;
+      if (true == iIsInFilter) {
+        wFilterList = gGlobal.FilterList_In;
+      }
+
+      if (0 == wFilterList.length) {
+        return;
+      }
+
+      var wTest = true;
+      while (wTest) {
+        var wIsfound = false;
+        for (var wi = 0; wi < wFilterList.length - 1; ++wi) {
+          if (wFilterList[wi] == iFilterValue) {
+            wIsfound = true;
+          }
+          if (wIsfound) {
+            wFilterList[wi] = wFilterList[wi + 1];
+          }
+        }
+
+        if ((true == wIsfound) || (iFilterValue == wFilterList[wFilterList.length - 1])){
+          wFilterList.length = wFilterList.length - 1;
+        }
+        else {
+          break;
+        }
+        wTest = wIsfound;
+      }
+      gGlobal.UpdateFilter = true;
+    }
+
+    function teardown() {
+
+      var xhttp = new XMLHttpRequest();
+      xhttp.onreadystatechange = function () {
+        if (this.readyState == 4 && this.status == 200) {
+          // Typical action to be performed when the document is ready:
+          document.getElementById("demo").innerHTML = xhttp.responseText;
+        }
+      };
+      xhttp.open("GET", "/shutdown", true);
+      xhttp.send();
+      window.close();
+      return false;
+    }
+
+    window.addEventListener("load", init);
+
+  </script>
+</head>
+
+<body>
+  <div id="id_formbody">
+    <input id="id_FilterText" autocomplete="off" type="text" />
+    <button onclick="addFilter(true)">Add In Filter</button>
+    <button onclick="addFilter(false)">Add Out Filter</button>
+    <input id="id_ScrollLock" type="checkbox" checked="true" /><span>Scroll Lock</span>
+    <button onclick="teardown()">shutdown</button>
+
+    <div id="id_FilterDiv_In">
+      <span>In Filters : </span>
+      <ul class="class_filterlist" id="id_FilterList_In"></ul>
+    </div>
+    <div id="id_FilterDiv_Out">
+      <span>Out Filters : </span>
+      <ul class="class_filterlist" id="id_FilterList_Out"></ul>
+    </div>
+  </div>
+  <ul id="id_outText"></ul>
+</body>
+
+</html>
