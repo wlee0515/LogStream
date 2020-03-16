@@ -63,6 +63,7 @@ def checkNewFiles(oMonitoredFileList, iDirectory, iExtensionList, iRecursive, iI
                     wFileHandle["Name"] = wFileName
                     wFileHandle["FullPath"] = wFullName
                     wFileHandle["CurrentLine"] = 0
+                    wFileHandle["LastTime"] = os.path.getmtime(wFullName)
                     if True == iInitLineAtEnd:
                         wLineCount = 0
                         wFile = open(wFullName,"r")
@@ -89,12 +90,6 @@ def Logger_Thread(iPort, iDirectory, iRecursive,iExtension):
 
     print("Web App hosting at : {}".format(wWebAppAddress))
     
-    out = subprocess.Popen(["start", "chrome", "-incognito", wWebAppAddress], 
-           stdout=subprocess.DEVNULL, 
-           stderr=subprocess.DEVNULL,
-           shell=True)
-    
-
     wLogDirectory = os.path.abspath(iDirectory)
 
     if False == os.path.exists(wLogDirectory):
@@ -108,31 +103,38 @@ def Logger_Thread(iPort, iDirectory, iRecursive,iExtension):
     wMonitoredFileList = {}
     checkNewFiles(wMonitoredFileList, wLogDirectory,iExtension, iRecursive, True)
 
-    while False == gShutdownFlag:
-        
+    out = subprocess.Popen(["start", "chrome", "-incognito", wWebAppAddress], 
+           stdout=subprocess.DEVNULL, 
+           stderr=subprocess.DEVNULL,
+           shell=True)
+    
+    while False == gShutdownFlag:    
         checkNewFiles(wMonitoredFileList, wLogDirectory,iExtension, iRecursive, False)
-
         wDeletedFiles = []
         for wKey, wValue in wMonitoredFileList.items():
             if  False == os.path.exists(wKey):
                 wDeletedFiles.append(wKey)
                 continue
             wFileName = wValue["Name"]
-            wFile = open(wKey,"r")
-            if wFile.mode == 'r':
-                wLines = wFile.readlines()
-                while wValue["CurrentLine"] < len(wLines):
-                    wIndex = wValue["CurrentLine"]
-                    NewMessage = {}
-                    NewMessage["FileName"] = wFileName
-                    NewMessage["FullPath"] = wKey
-                    NewMessage["Line"] = wIndex+1
-                    NewMessage["Log"] = wLines[wIndex]
-                    socketio.emit('Send Log', NewMessage, json = True, broadcast=True)
-                    wIndex += 1
-                    wValue["CurrentLine"] = wIndex
+            wNewTime = os.path.getmtime(wKey)
 
-            wFile.close() 
+            if(wNewTime > wValue["LastTime"]):
+                wFile = open(wKey,"r")
+                if wFile.mode == 'r':
+                    wLines = wFile.readlines()
+                    while wValue["CurrentLine"] < len(wLines):
+                        wIndex = wValue["CurrentLine"]
+                        NewMessage = {}
+                        NewMessage["FileName"] = wFileName
+                        NewMessage["FullPath"] = wKey
+                        NewMessage["Line"] = wIndex+1
+                        NewMessage["Log"] = wLines[wIndex]
+                        socketio.emit('Send Log', NewMessage, json = True, broadcast=True)
+                        wIndex += 1
+                        wValue["CurrentLine"] = wIndex
+                wFile.close()
+
+            wValue["LastTime"] = wNewTime
 
 
         for wKey in wDeletedFiles:
