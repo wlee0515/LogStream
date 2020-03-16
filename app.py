@@ -52,6 +52,7 @@ def Flask_Thread(iPort):
 
 def Logger_Thread(iPort, iDirectory, iRecursive,iExtension):
 
+    global gShutdownFlag
     wWebAppAddress = "http://localhost:{}/".format(iPort)
 
     print("Web App hosting at : {}".format(wWebAppAddress))
