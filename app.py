@@ -149,6 +149,8 @@ def Logger_Thread(iPort, iDirectory, iRecursive,iExtension):
             del wMonitoredFileList[wKey]
 
         time.sleep(1)
+        
+    print("Shutdown requested. Exiting Main Loop")
 
 
 
