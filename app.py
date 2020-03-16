@@ -50,6 +50,37 @@ def Flask_Thread(iPort):
     port = int(iPort)
     socketio.run(app, host='0.0.0.0', port=port, debug=False)
 
+def checkNewFiles(oMonitoredFileList, iDirectory, iExtensionList, iRecursive, iInitLineAtEnd):
+    for (dirpath, dirnames, wDirfilenames) in os.walk(iDirectory):
+       
+        for wFileName in wDirfilenames:
+            wFullName = os.path.join(dirpath, wFileName)
+            name, extension = os.path.splitext(wFileName)                
+            if extension  in iExtensionList:
+                if wFullName not in oMonitoredFileList:
+                    
+                    wFileHandle = {}
+                    wFileHandle["Name"] = wFileName
+                    wFileHandle["FullPath"] = wFullName
+                    wFileHandle["CurrentLine"] = 0
+                    if True == iInitLineAtEnd:
+                        wLineCount = 0
+                        wFile = open(wFullName,"r")
+                        if wFile.mode == 'r':
+                            wLines = wFile.readlines()
+                            wLineCount = len(wLines)
+                        wFile.close() 
+
+                        if(wLineCount >= 1):
+                            wFileHandle["CurrentLine"] = wLineCount - 1
+                    oMonitoredFileList[wFullName] = wFileHandle
+                    print("Adding file : {}".format(wFullName))
+
+        if False == iRecursive:
+            break
+
+
+
 
 def Logger_Thread(iPort, iDirectory, iRecursive,iExtension):
 
@@ -75,52 +106,11 @@ def Logger_Thread(iPort, iDirectory, iRecursive,iExtension):
         print("Streaming logs from directory [{}]".format(wLogDirectory))
 
     wMonitoredFileList = {}
-    
-    for (dirpath, dirnames, wDirfilenames) in os.walk(wLogDirectory):
-       
-        for wFileName in wDirfilenames:
-            wFullName = os.path.join(dirpath, wFileName)
-            name, extension = os.path.splitext(wFileName)                
-            if extension  in iExtension:
-                if wFullName not in wMonitoredFileList:
-                    
-                    wLineCount = 0
-                    wFile = open(wFullName,"r")
-                    if wFile.mode == 'r':
-                        wLines = wFile.readlines()
-                        wLineCount = len(wLines)
-                    wFile.close() 
-
-                    wFileHandle = {}
-                    wFileHandle["Name"] = wFileName
-                    wFileHandle["FullPath"] = wFullName
-                    wFileHandle["CurrentLine"] = 0
-                    if wLineCount >= 1:
-                        wFileHandle["CurrentLine"] = wLineCount - 1
-                    wMonitoredFileList[wFullName] = wFileHandle
-                    print("Adding file : {}".format(wFullName))
-
-        if False == iRecursive:
-            break
+    checkNewFiles(wMonitoredFileList, wLogDirectory,iExtension, iRecursive, True)
 
     while False == gShutdownFlag:
         
-        for (dirpath, dirnames, wDirfilenames) in os.walk(wLogDirectory):
-           
-            for wFileName in wDirfilenames:
-                wFullName = os.path.join(dirpath, wFileName)
-                name, extension = os.path.splitext(wFileName)                
-                if extension  in iExtension:
-                    if wFullName not in wMonitoredFileList:
-                        wFileHandle = {}
-                        wFileHandle["Name"] = wFileName
-                        wFileHandle["FullPath"] = wFullName
-                        wFileHandle["CurrentLine"] = 0
-                        wMonitoredFileList[wFullName] = wFileHandle
-                        print("Adding file : {}".format(wFullName))
-
-            if False == iRecursive:
-                break
+        checkNewFiles(wMonitoredFileList, wLogDirectory,iExtension, iRecursive, False)
 
         wDeletedFiles = []
         for wKey, wValue in wMonitoredFileList.items():
@@ -150,7 +140,6 @@ def Logger_Thread(iPort, iDirectory, iRecursive,iExtension):
             del wMonitoredFileList[wKey]
 
         time.sleep(1)
-        print("{} Shutdown flag = {}".format(time.time(), gShutdownFlag))
         
     print("Shutdown requested. Exiting Main Loop")
 
@@ -184,17 +173,16 @@ def main():
 
     # creating thread 
     wThread_Flask = threading.Thread(target=Flask_Thread, args=(wPort,)) 
-    wThread_Logger = threading.Thread(target=Logger_Thread, args=(wPort,wSearchDirectory, wRecursive,wExtensionList)) 
 
     # Daemon Setup
     wThread_Flask.setDaemon(True)
     
     #starting thread 
     wThread_Flask.start() 
-    wThread_Logger.start()
-  
+
+    Logger_Thread(wPort,wSearchDirectory, wRecursive,wExtensionList)
+    
     # wait for thread completion
-    wThread_Logger.join() 
     wThread_Flask.join(0.1) 
 
     # Completion
