@@ -288,8 +288,14 @@
 
       var xhttp = new XMLHttpRequest();
       xhttp.open("GET", "/shutdown", true);
+      xhttp.onreadystatechange = function () {
+        if (this.readyState == 4 && this.status == 200) {
+        //  window.close();
+        }
+        window.close();
+      };
+
       xhttp.send();
-      window.close();
       return false;
     }
 

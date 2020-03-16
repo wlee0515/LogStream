@@ -33,7 +33,8 @@ def send_script(path):
 def start_shutdown():
     global gShutdownFlag
     gShutdownFlag = True
-    return "<script>window.close();</script>"
+    print("Shutdown Request Receiived")
+    return "Sent"
 
 @socketio.on('connect')
 def socket_connect():
@@ -149,6 +150,7 @@ def Logger_Thread(iPort, iDirectory, iRecursive,iExtension):
             del wMonitoredFileList[wKey]
 
         time.sleep(1)
+        print("{} Shutdown flag = {}".format(time.time(), gShutdownFlag))
         
     print("Shutdown requested. Exiting Main Loop")
 
