@@ -42,7 +42,6 @@ def socket_connect():
     print("Client {} connected".format(request.sid))
     global gClientList
     gClientList["{}".format(request.sid)] = request.sid
-    print(gClientList)
     return "Connected"
 
 @socketio.on('disconnect')
