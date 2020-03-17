@@ -16,6 +16,7 @@ gApp_path =os.path.join(os.path.dirname(os.path.realpath(__file__)),'./website/'
 
 app = Flask("LogStream",  root_path=gApp_path)
 socketio = SocketIO(app)
+gClientList = {}
 
 @app.route('/')
 def home():
@@ -38,12 +39,20 @@ def start_shutdown():
 
 @socketio.on('connect')
 def socket_connect():
-    print("New Connection")
+    print("Client {} connected".format(request.sid))
+    global gClientList
+    gClientList["{}".format(request.sid)] = request.sid
+    print(gClientList)
     return "Connected"
 
 @socketio.on('disconnect')
 def socket_disconnect():
-    print('Client disconnected')
+    global gClientList
+    del gClientList["{}".format(request.sid)]
+    if 0 == len(gClientList):    
+        global gShutdownFlag
+        gShutdownFlag = True
+    print('Client {} disconnected'.format(request.sid))
 
 def Flask_Thread(iPort):
     app.secret_key = os.urandom(12)
@@ -81,6 +90,13 @@ def checkNewFiles(oMonitoredFileList, iDirectory, iExtensionList, iRecursive, iI
             break
 
 
+def TestSend(iMessage):
+    for key, value in gClientList.items():
+        socketio.emit('Send Log', iMessage, json = True, room=value)
+
+def sendLogJSON(iMessage):
+    #socketio.emit('Send Log', iMessage, json = True, broadcast=True)
+    TestSend(iMessage)
 
 
 def Logger_Thread(iPort, iDirectory, iRecursive,iExtension):
@@ -129,7 +145,7 @@ def Logger_Thread(iPort, iDirectory, iRecursive,iExtension):
                         NewMessage["FullPath"] = wKey
                         NewMessage["Line"] = wIndex+1
                         NewMessage["Log"] = wLines[wIndex]
-                        socketio.emit('Send Log', NewMessage, json = True, broadcast=True)
+                        sendLogJSON(NewMessage)
                         wIndex += 1
                         wValue["CurrentLine"] = wIndex
                 wFile.close()
