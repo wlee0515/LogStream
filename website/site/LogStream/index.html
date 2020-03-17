@@ -299,6 +299,10 @@
       return false;
     }
 
+    function reload(){
+      location.reload(true)
+    }
+
     window.addEventListener("load", init);
 
   </script>
@@ -310,7 +314,8 @@
     <button onclick="addFilter(true)">Add In Filter</button>
     <button onclick="addFilter(false)">Add Out Filter</button>
     <input id="id_ScrollLock" type="checkbox" checked="true" /><span>Scroll Lock</span>
-    <button onclick="teardown()">shutdown</button>
+    <button onclick="reload()">Clear Logs</button>
+    <button onclick="teardown()">Shutdown and Exit</button>
 
     <div id="id_FilterDiv_In">
       <span>In Filters : </span>
