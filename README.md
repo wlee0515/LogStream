@@ -12,7 +12,7 @@ The applicaiton is to be used in windows environment.
 ## To use:
 
 ```bash
-python ApplicationDirectory\app,py -port %PORT_NUMBER% -dir %LOG_DIRECTORY%
+python ApplicationDirectory\app.py -port %PORT_NUMBER% -dir %LOG_DIRECTORY%
 
 ```
 ### Additional arguments
@@ -23,6 +23,6 @@ Additional arguments will be used as file extensions to monitor. By default .txt
 
 ### Example
 ```bash
-python ApplicationDirectory\app,py -port 2000 -dir "C:\MyLogs" -r .json .xml
+python ApplicationDirectory\app.py -port 2000 -dir "C:\MyLogs" -r .json .xml
 
 ```
