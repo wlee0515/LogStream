@@ -138,9 +138,9 @@
               wNewMessage.innerText = wLog.FileName + "(" + wLog.Line + ") : " + wLog.Log;
 
               var hash = hashCode(wLog.FullPath);
-              var r = (hash & 0xFF0000) >> 16;
-              var g = (hash & 0x00FF00) >> 8;
-              var b = hash & 0x0000FF;
+              var r = Math.floor(((hash & 0xFF0000) >> 16)/2);
+              var g = Math.floor(((hash & 0x00FF00) >> 8)/2);
+              var b = Math.floor((hash & 0x0000FF)/2);
               wNewMessage.style.color = "rgb(" + r + "," + g + "," + b + ")";
               wOutText.append(wNewMessage)
             }
@@ -174,11 +174,6 @@
           var wFilterValue = iFilterList[wi]
           var wNewFilter = document.createElement("li");
           wNewFilter.innerHTML = wFilterValue + "<span  class='class_close' onclick='removeFilter(\"" + wFilterValue + "\"," + iIsInFilter + ")'>x</span>";
-
-          var hash = hashCode(wFilterValue);
-          var r = (hash & 0xFF0000) >> 16;
-          var g = (hash & 0x00FF00) >> 8;
-          var b = hash & 0x0000FF;
 
           iFilterListDOM.append(wNewFilter)
         }

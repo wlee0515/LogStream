@@ -12,6 +12,10 @@ import eventlet
 eventlet.monkey_patch()
 
 gShutdownFlag = False
+gWaitTime = 5
+gTimeOutShutDown = False
+gShutDownTime = gWaitTime
+gIterationTime = 0.1
 gApp_path =os.path.join(os.path.dirname(os.path.realpath(__file__)),'./website/')
 
 app = Flask("LogStream",  root_path=gApp_path)
@@ -42,6 +46,8 @@ def socket_connect():
     print("Client {} connected".format(request.sid))
     global gClientList
     gClientList["{}".format(request.sid)] = request.sid
+    global gTimeOutShutDown
+    gTimeOutShutDown = False
     return "Connected"
 
 @socketio.on('disconnect')
@@ -49,8 +55,8 @@ def socket_disconnect():
     global gClientList
     del gClientList["{}".format(request.sid)]
     if 0 == len(gClientList):    
-        global gShutdownFlag
-        gShutdownFlag = True
+        global gTimeOutShutDown
+        gTimeOutShutDown = True
     print('Client {} disconnected'.format(request.sid))
 
 def Flask_Thread(iPort):
@@ -156,7 +162,19 @@ def Logger_Thread(iPort, iDirectory, iRecursive,iExtension):
             print("Log File deleted : {}".format(wMonitoredFileList[wKey]["FullPath"]))
             del wMonitoredFileList[wKey]
 
-        time.sleep(1)
+        global gShutDownTime
+        global gWaitTime
+        global gIterationTime
+        if gTimeOutShutDown:
+            if gShutDownTime < 0:
+                gShutDownTime = True
+            else:
+                gShutDownTime -= gIterationTime
+        else:
+            gShutDownTime = gWaitTime
+        
+
+        time.sleep(gIterationTime)
         
     print("Shutdown requested. Exiting Main Loop")
 
