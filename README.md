@@ -12,7 +12,7 @@ The applicaiton is to be used in windows environment.
 ## To use:
 
 ```bash
-python ApplicationDirectory\app,py -port %PORT_NUMBER" -dir %LOG_DIRECTORY%
+python ApplicationDirectory\app,py -port %PORT_NUMBER% -dir %LOG_DIRECTORY%
 
 ```
 ### Additional arguments
