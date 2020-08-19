@@ -137,10 +137,11 @@
               var wNewMessage = document.createElement("li");
               wNewMessage.innerText = wLog.FileName + "(" + wLog.Line + ") : " + wLog.Log;
 
+              var divider = 1.75;
               var hash = hashCode(wLog.FullPath);
-              var r = Math.floor(((hash & 0xFF0000) >> 16)/2);
-              var g = Math.floor(((hash & 0x00FF00) >> 8)/2);
-              var b = Math.floor((hash & 0x0000FF)/2);
+              var r = Math.round(((hash & 0xFF0000) >> 16)/divider);
+              var g = Math.round(((hash & 0x00FF00) >> 8)/divider);
+              var b = Math.round((hash & 0x0000FF)/divider);
               wNewMessage.style.color = "rgb(" + r + "," + g + "," + b + ")";
               wOutText.append(wNewMessage)
             }
