@@ -69,7 +69,7 @@
       background: white;
     }
   </style>
-  <script src="/script/LogStream/socket.io-1.2.0.js"></script>
+  <script src="/script/LogStream/socket.io-4.1.3.js"></script>
   <script>
 
     var gGlobal = {
@@ -142,7 +142,7 @@
               var r = Math.round(((hash & 0xFF0000) >> 16)/divider);
               var g = Math.round(((hash & 0x00FF00) >> 8)/divider);
               var b = Math.round((hash & 0x0000FF)/divider);
-              wNewMessage.style.color = "rgb(" + r + "," + g + "," + b + ")";
+              wNewMessage.style.color = "hsl(" + 360*(hash/0xFFFFFF) + ", 100%, 40%)";
               wOutText.append(wNewMessage)
             }
           }
