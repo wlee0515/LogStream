@@ -139,10 +139,8 @@
 
               var divider = 1.25;
               var hash = hashCode(wLog.FullPath);
-              var r = Math.round(((hash & 0xFF0000) >> 16)/divider);
-              var g = Math.round(((hash & 0x00FF00) >> 8)/divider);
-              var b = Math.round((hash & 0x0000FF)/divider);
-              wNewMessage.style.color = "hsl(" + 360*(hash/0xFFFFFF) + ", 100%, 40%)";
+              var wCode = parseInt((Math.abs(hash)%300)*(360/300));
+              wNewMessage.style.color = "hsl(" + wCode + ", 100%, 40%)";
               wOutText.append(wNewMessage)
             }
           }

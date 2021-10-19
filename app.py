@@ -22,6 +22,14 @@ app = Flask("LogStream",  root_path=gApp_path)
 socketio = SocketIO(app)
 gClientList = {}
 
+def startChromeClient(iPort):
+    wWebAppAddress = "http://localhost:{}/".format(iPort)
+    print("Web App hosting at : {}".format(wWebAppAddress))
+    out = subprocess.Popen(["start", "chrome", "-incognito", wWebAppAddress], 
+           stdout=subprocess.DEVNULL, 
+           stderr=subprocess.DEVNULL,
+           shell=True)
+
 @app.route('/')
 def home():
     return redirect("/site/LogStream", code=302)
@@ -62,7 +70,11 @@ def socket_disconnect():
 def Flask_Thread(iPort):
     app.secret_key = os.urandom(12)
     port = int(iPort)
-    socketio.run(app, host='0.0.0.0', port=port, debug=False)
+    try:
+      socketio.run(app, host='0.0.0.0', port=port, debug=False)
+    except:
+      startChromeClient(iPort)
+      os.kill(os.getpid(), 9)
 
 def checkNewFiles(oMonitoredFileList, iDirectory, iExtensionList, iRecursive, iInitLineAtEnd):
     for (dirpath, dirnames, wDirfilenames) in os.walk(iDirectory):
@@ -107,9 +119,6 @@ def sendLogJSON(iMessage):
 def Logger_Thread(iPort, iDirectory, iRecursive,iExtension):
 
     global gShutdownFlag
-    wWebAppAddress = "http://localhost:{}/".format(iPort)
-
-    print("Web App hosting at : {}".format(wWebAppAddress))
     
     wLogDirectory = os.path.abspath(iDirectory)
 
@@ -124,10 +133,7 @@ def Logger_Thread(iPort, iDirectory, iRecursive,iExtension):
     wMonitoredFileList = {}
     checkNewFiles(wMonitoredFileList, wLogDirectory,iExtension, iRecursive, True)
 
-    out = subprocess.Popen(["start", "chrome", "-incognito", wWebAppAddress], 
-           stdout=subprocess.DEVNULL, 
-           stderr=subprocess.DEVNULL,
-           shell=True)
+    startChromeClient(iPort)
     
     while False == gShutdownFlag:    
         checkNewFiles(wMonitoredFileList, wLogDirectory,iExtension, iRecursive, False)
